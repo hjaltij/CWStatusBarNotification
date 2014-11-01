@@ -28,11 +28,11 @@
     else {
         height = [UIApplication sharedApplication].statusBarFrame.size.height;
     }
-
+    
     if (point.y > 0 && point.y < (self.notificationHeight != 0.0 ? self.notificationHeight : height)) {
         return [super hitTest:point withEvent:event];
     }
-
+    
     return nil;
 }
 
@@ -56,7 +56,7 @@ static CWDelayedBlockHandle perform_block_after_delay(CGFloat seconds, dispatch_
 		if (NO == cancel && nil != blockToExecute) {
 			dispatch_async(dispatch_get_main_queue(), blockToExecute);
 		}
-
+        
 		blockToExecute = nil;
 		delayHandleCopy = nil;
 	};
@@ -321,14 +321,14 @@ static void cancel_delayed_block(CWDelayedBlockHandle delayedHandle)
     // Doesn't use autoresizing masks so that we can create constraints below manually
     [view setTranslatesAutoresizingMaskIntoConstraints:NO];
     [self.customView addSubview:view];
-
+    
     // Setup Auto Layout constaints so that the custom view that is added is constained to be the same
     // size as its superview, whose frame will be altered
     [self.customView addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeTrailing relatedBy:NSLayoutRelationEqual toItem:self.customView attribute:NSLayoutAttributeTrailing multiplier:1.0 constant:0.0]];
     [self.customView addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeLeading relatedBy:NSLayoutRelationEqual toItem:self.customView attribute:NSLayoutAttributeLeading multiplier:1.0 constant:0.0]];
     [self.customView addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.customView attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0]];
     [self.customView addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:self.customView attribute:NSLayoutAttributeBottom multiplier:1.0 constant:0.0]];
-
+    
     [self setupNotificationView:self.customView];
 }
 
@@ -442,7 +442,7 @@ static void cancel_delayed_block(CWDelayedBlockHandle delayedHandle)
 
         // checking for screen orientation change
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarFrame) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
-
+        
         // checking for status bar change
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarFrame) name:UIApplicationWillChangeStatusBarFrameNotification object:nil];
 
@@ -456,6 +456,19 @@ static void cancel_delayed_block(CWDelayedBlockHandle delayedHandle)
             });
         }];
     }
+	else
+	{
+		self.notificationLabel.text = message;
+		
+		[UIView animateWithDuration:STATUS_BAR_ANIMATION_LENGTH animations:^{
+			[self firstFrameChange];
+		} completion:^(BOOL finished) {
+			double delayInSeconds = [self.notificationLabel scrollTime];
+			perform_block_after_delay(delayInSeconds, ^{
+				[completion invoke];
+			});
+		}];
+	}
 }
 
 - (void)displayNotificationWithView:(UIView *)view completion:(void (^)(void))completion
@@ -463,13 +476,13 @@ static void cancel_delayed_block(CWDelayedBlockHandle delayedHandle)
     if (!self.notificationIsShowing) {
         self.isCustomView = YES;
         self.notificationIsShowing = YES;
-
+        
         // create UIWindow
         [self createNotificationWindow];
-
+        
         // setup view
         [self createNotificationCustomView:view];
-
+        
         // create status bar view
         [self createStatusBarView];
 
@@ -478,13 +491,13 @@ static void cancel_delayed_block(CWDelayedBlockHandle delayedHandle)
         [rootView addSubview:self.customView];
         [rootView bringSubviewToFront:self.customView];
         [self.notificationWindow setHidden:NO];
-
+        
         // checking for screen orientation change
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarFrame) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
-
+        
         // checking for status bar change
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarFrame) name:UIApplicationWillChangeStatusBarFrameNotification object:nil];
-
+        
         // animate
         [UIView animateWithDuration:STATUS_BAR_ANIMATION_LENGTH animations:^{
             [self firstFrameChange];
